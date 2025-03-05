@@ -5,6 +5,9 @@ namespace SentryTunnel;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * @psalm-suppress UnusedClass
+ */
 class Provider extends ServiceProvider
 {
     /**
@@ -53,6 +56,7 @@ class Provider extends ServiceProvider
     /**
      * Register any package services.
      */
+    #[\Override]
     public function register(): void
     {
         $this->mergeConfigFrom(

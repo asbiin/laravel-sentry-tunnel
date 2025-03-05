@@ -30,11 +30,11 @@ jobs:
     name: Run tests
     uses: monicahq/workflows/.github/workflows/library.yml@v2
     with:
-      php-versions: "['8.1', '8.2', '8.3']"
-      laravel-versions: "['^10.0', '^11.0']"
-      default-php-version: '8.3'
-      default-laravel-version: '^11.0'
-      matrix-exclude: "[{'php-version':'8.1','laravel-version':'^11.0'}]"
+      php-versions: "['8.2', '8.3', '8.4']"
+      laravel-versions: "['^10.0', '^11.0', '^12.0']"
+      default-php-version: '8.4'
+      default-laravel-version: '^12.0'
+      matrix-exclude: "[]"
       project: asbiin_laravel-sentry-tunnel
       organization: asbiin-github
     secrets:
