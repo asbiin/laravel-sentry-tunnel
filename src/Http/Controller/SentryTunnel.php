@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Http;
 use function Safe\json_decode;
 use function Safe\parse_url;
 
+/**
+ * @psalm-suppress UnusedClass
+ */
 class SentryTunnel extends Controller
 {
     /**
@@ -53,7 +56,7 @@ class SentryTunnel extends Controller
      */
     private function allowedHosts(): array
     {
-        return array_filter(Arr::flatten([config('sentry-tunnel.allowed-hosts', [])]));
+        return array_filter(Arr::flatten([config('sentry-tunnel.allowed-hosts', [])])); // @phpstan-ignore arrayFilter.strict
     }
 
     /**
@@ -61,7 +64,7 @@ class SentryTunnel extends Controller
      */
     private function allowedProjects(): array
     {
-        $projects = array_filter(Arr::flatten([config('sentry-tunnel.allowed-projects', [])]));
+        $projects = array_filter(Arr::flatten([config('sentry-tunnel.allowed-projects', [])])); // @phpstan-ignore arrayFilter.strict
 
         return array_map('intval', $projects);
     }
