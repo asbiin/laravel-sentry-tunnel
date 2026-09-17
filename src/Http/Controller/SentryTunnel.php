@@ -27,7 +27,6 @@ class SentryTunnel extends Controller
     {
         $this->checkPayloadSize($request);
 
-        /** @var string $envelope */
         $envelope = $request->getContent();
         abort_if(trim($envelope) === '', 422, 'empty envelope');
 
