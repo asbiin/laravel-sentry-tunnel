@@ -34,13 +34,63 @@ SENTRY_TUNNEL_ALLOWED_HOSTS=my.host.com
 SENTRY_TUNNEL_ALLOWED_PROJECTS=1234,456,78
 ```
 
+Surrounding whitespace is ignored, and hosts are matched without regard to case, so
+`my.host.com, other.host.com` works as written. If the host list is empty, every request is refused.
+
 ### Security
 
 This essentially creates a reverse proxy to the `SENTRY_TUNNEL_ALLOWED_HOSTS`. As the Sentry DSN is not kept secret, this enables everyone to send messages to these hosts that seem to originate from your server.
 
-Therefore, the default middleware list for the tunnel URL includes `web` and `auth` (so that only authenticated users can use the endpoint).
+Therefore, the default middleware list for the tunnel URL includes `web`, `auth` (so that only authenticated users can use the endpoint) and `throttle:300,1`, which limits one caller to 300 reports per minute. The rate limit sits after `auth` so an unauthenticated probe is refused without consuming a slot.
 
 You can change the middleware list of the tunnel endpoint by setting the `sentry-tunnel.middleware` value of your `config/sentry-tunnel.php` file.
+
+### Payload size
+
+The tunnel refuses an envelope larger than `sentry-tunnel.max-payload-size` with a `413`, before the
+body is read.
+
+```dotenv
+SENTRY_TUNNEL_MAX_PAYLOAD_SIZE=20971520
+```
+
+The default of 20 MiB sits far above anything a browser SDK produces, including session replay and
+profiling payloads, and below Sentry's own envelope ceiling, so it never refuses a report Sentry
+would have accepted. Set it to `null` in the config file to disable the check. PHP's `post_max_size`
+is not a substitute: it is not applied to a body whose content type is not a form type.
+
+### Timeouts
+
+```dotenv
+SENTRY_TUNNEL_TIMEOUT=5
+SENTRY_TUNNEL_CONNECT_TIMEOUT=2
+```
+
+How long, in seconds, the tunnel waits for Sentry. These replace the framework defaults of 30 and 10
+seconds, and bound how long a server worker is held when Sentry is slow or unreachable. The rate
+limit does not bound this — it limits how many requests are admitted, not how long each one is held.
+Raise them if your egress proxy is slow. When the timeout expires the caller receives a `504`.
+
+### Logging
+
+```dotenv
+SENTRY_TUNNEL_LOG_LEVEL=warning
+```
+
+The level at which a failed or unreachable Sentry request is logged, with the upstream status, host
+and project — never the upstream response text, and never the envelope.
+
+The default is `warning` on purpose: the Sentry Laravel SDK treats an ordinary log record at that
+level as a breadcrumb rather than an event. Raising this to `error` makes tunnel failures visible as
+events, but it also means every failed relay sends a new report to the very Sentry instance that is
+already failing.
+
+### Responses
+
+The tunnel relays Sentry's own status code, along with the `Retry-After` and `X-Sentry-Rate-Limits`
+headers, so that the Sentry SDK can apply its own backoff when your organisation is being rate
+limited. On success the upstream body and content type are relayed too. On an upstream error the
+status is relayed but the body is not, so Sentry's error text is never disclosed to the browser.
 
 ### CsrfToken
 
